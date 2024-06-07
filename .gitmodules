@@ -1,0 +1,3 @@
+[submodule "voting_proto"]
+	path = voting_proto
+	url = git@github.com:saladin2098/voting_proto.git
