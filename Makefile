@@ -1,7 +1,7 @@
 CURRENT_DIR=$(shell pwd)
-DBURL="postgres://postgres:00salom00@localhost:5432/election?sslmode=disable"
+DBURL="postgres://postgres:00salom00@localhost:5432/election2?sslmode=disable"
 exp:
-	export DBURL="postgres://postgres:00salom00@localhost:5432/election?sslmode=disable"
+	export DBURL="postgres://postgres:00salom00@localhost:5432/election2?sslmode=disable"
 
 mig-up:
 	migrate -path migrations -database ${DBURL} -verbose up

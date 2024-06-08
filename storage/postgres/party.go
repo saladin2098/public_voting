@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 
 	pb "github.com/saladin2098/month3/lesson11/public_voting/genproto"
@@ -47,7 +48,7 @@ func (s *PartyStorage) DeleteParty(id *pb.ById) (*pb.Void, error) {
 func (s *PartyStorage) UpdateParty(party *pb.Party) (*pb.Void, error) {
 	var conditions []string
 	var args []interface{}
-	query := `update party set`
+	query := `UPDATE party SET `
 
 	if party.Name != "" {
 		conditions = append(conditions, fmt.Sprintf("name = $%d", len(args)+1))
@@ -71,7 +72,7 @@ func (s *PartyStorage) UpdateParty(party *pb.Party) (*pb.Void, error) {
 	}
 
 	query += strings.Join(conditions, ", ")
-	query += fmt.Sprintf(" where id = $%d", len(args)+1)
+	query += fmt.Sprintf(" WHERE id = $%d", len(args)+1)
 	args = append(args, party.Id)
 
 	_, err := s.db.Exec(query, args...)
@@ -82,6 +83,7 @@ func (s *PartyStorage) UpdateParty(party *pb.Party) (*pb.Void, error) {
 	return &pb.Void{}, nil
 }
 func (s *PartyStorage) GetByIdParty(id *pb.ById) (*pb.Party, error) {
+	log.Println(id.Id)
 	query := `
         SELECT id,
 			name,
@@ -91,8 +93,7 @@ func (s *PartyStorage) GetByIdParty(id *pb.ById) (*pb.Party, error) {
 		    FROM party 
 			WHERE id=$1
         `
-    row := s.db.QueryRow(query,
-        id.Id)
+    row := s.db.QueryRow(query,id.Id)
     party := &pb.Party{}
     err := row.Scan(
         &party.Id,

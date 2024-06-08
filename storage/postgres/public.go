@@ -144,65 +144,65 @@ func (s *PublicStorage) GetByIdPublic(id *pb.ById) (*pb.Public, error) {
     return public, nil
 }
 func (s *PublicStorage) GetAllPublics(filter *pb.Filter) (*pb.GetAllPublic, error) {
-	query := `select * from public `
+		query := `
+		SELECT p.id, p.first_name, p.last_name, p.birthday, p.gender, p.nation, pt.id, pt.name, pt.slogan, pt.open_date, pt.description
+		FROM public p
+		LEFT JOIN party pt ON p.party_id = pt.id
+	`
 	var conditions []string
 	var args []interface{}
 	if filter.Party != "" {
-        conditions = append(conditions, fmt.Sprintf("party = $%d", len(args)+1))
-        args = append(args, filter.Party)
-    }
-	if filter.Gender != "" {
-		conditions = append(conditions, fmt.Sprintf("gender = $%d", len(args)+1))
-        args = append(args, filter.Gender)
+		conditions = append(conditions, fmt.Sprintf("p.party_id = $%d", len(args)+1))
+		args = append(args, filter.Party)
 	}
-	if filter.Nation!= "" {
-        conditions = append(conditions, fmt.Sprintf("nation = $%d", len(args)+1))
-        args = append(args, filter.Nation)
-    }
-	if filter.Age!= 0 {
-        conditions = append(conditions, fmt.Sprintf("extract(year(age(birthday))) >= $%d", len(args)+1))
-        args = append(args, filter.Age)
-    }
+	if filter.Gender != "" {
+		conditions = append(conditions, fmt.Sprintf("p.gender = $%d", len(args)+1))
+		args = append(args, filter.Gender)
+	}
+	if filter.Nation != "" {
+		conditions = append(conditions, fmt.Sprintf("p.nation = $%d", len(args)+1))
+		args = append(args, filter.Nation)
+	}
+	if filter.Age != 0 {
+		conditions = append(conditions, fmt.Sprintf("EXTRACT(YEAR FROM AGE(p.birthday)) >= $%d", len(args)+1))
+		args = append(args, filter.Age)
+	}
 	if len(conditions) > 0 {
-        query += "where " + strings.Join(conditions, " and ")
-    }
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
 	rows, err := s.db.Query(query, args...)
-	if err!= nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
-	publics := pb.GetAllPublic{}
+
+	publics := &pb.GetAllPublic{}
 	for rows.Next() {
 		public := pb.Public{}
-		var party_id string
-        err := rows.Scan(
-            &public.Id,
-            &public.FirstName,
-            &public.LastName,
-            &public.Birthday,
-            &public.Gender,
-            &public.Nation,
-            &party_id,
-        )
-        if err!= nil {
-            return nil, err
-        }
 		var party pb.Party
-
-		query := `select * from party where id = $1`
-		row := s.db.QueryRow(query,party_id)
-		err = row.Scan(
+		err := rows.Scan(
+			&public.Id,
+			&public.FirstName,
+			&public.LastName,
+			&public.Birthday,
+			&public.Gender,
+			&public.Nation,
 			&party.Id,
 			&party.Name,
 			&party.Slogan,
 			&party.OpenDate,
 			&party.Description,
 		)
-		if err!= nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 		public.Party = &party
-        publics.Publics = append(publics.Publics, &public)
+		publics.Publics = append(publics.Publics, &public)
 	}
-	return &publics,nil
+	if err := rows.Err(); err != nil {
+		return nil, err
+}
+
+return publics, nil
 }
